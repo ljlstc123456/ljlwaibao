@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <title>Blockly Demo: Custom Dialog</title>
+  <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="./acorn_interpreter.js"></script>
+  <script src="../../blockly_compressed.js"></script>
+  <script src="../../blocks_compressed.js"></script>
+  <script src="../../msg/js/zh-hans.js"></script>
+  <script src="../../javascript_compressed.js"></script>
+  <script src="./customblock.js"></script>
+  <script src="./rocket.js"></script>
+  <style>
+    *{
+      padding: 0;
+      margin: 0;
+    }
+    body {
+      background-color: #fff;
+      font-family: sans-serif;
+    }
+    .blocklyText{
+      font-family: "Microsoft YaHei" !important;
+    }
+    h1 {
+      font-weight: normal;
+      font-size: 140%;
+    }
+    .style-name{
+      width: 400px;
+    }
+    #runPad{
+      display: none;
+      position: fixed;
+      border: 1px solid #ccc;
+      box-shadow: 0 1px 10px #000;
+      top:50px;
+      left: 50px;
+      bottom: 50px;
+      right: 50px;
+      background-color: #fff;
+      z-index: 100000;
+      background-image: url('./bg.jpg');
+      background-size: 1000px 500px;
+      background-repeat: repeat;
+    }
+    @-webkit-keyframes forward {
+      from {
+        background-position-y:0 ;
+      }
+      to {
+        background-position-y:1000px ;
+      }
+    }
+
+    @keyframes forward {
+      from {
+        background-position-y:0 ;
+      }
+      to {
+        background-position-y:1000px ;
+      }
+    }
+    @-webkit-keyframes left {
+      from {
+        background-position-x:0 ;
+      }
+      to {
+        background-position-x:1000px ;
+      }
+    }
+
+    @keyframes left {
+      from {
+        background-position-x:0 ;
+      }
+      to {
+        background-position-x:1000px ;
+      }
+    }
+
+    @-webkit-keyframes shun {
+      from {
+        transform: rotate(0deg)
+      }
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    @keyframes shun {
+      from {
+        transform: rotate(0deg)
+      }
+      to {
+        transform: rotate(360deg)
+      }
+    }
+    
+    .shun{
+      -webkit-animation-name: shun;
+              animation-name: shun;
+    }
+    .ni{
+      -webkit-animation-name: shun;
+              animation-name: shun;
+              animation-direction:reverse;
+      -webkit-animation-direction:reverse;
+    }
+    .forward {
+      -webkit-animation-name: forward;
+              animation-name: forward;
+    }
+    .back {
+      -webkit-animation-name: forward;
+              animation-name: forward;
+              animation-direction:reverse;
+      -webkit-animation-direction:reverse;
+    }
+    .left{
+      -webkit-animation-name: left;
+              animation-name: left;
+    }
+    .right{
+      -webkit-animation-name: left;
+              animation-name: left;
+              animation-direction:reverse;
+      -webkit-animation-direction:reverse;
+    }
+    
+    .animated {
+      animation-timing-function: linear;
+      -webkit-animation-timing-function: linear;
+      animation-fill-mode: both;
+      -webkit-animation-fill-mode: both;
+      animation-iteration-count: infinite;
+      -webkit-animation-iteration-count: infinite;
+    }
+    #rocket{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin-left: -32px;
+      margin-top: -32px;
+      transition: all 1s linear;
+    }
+    #rocket.animated{
+      transition: none;
+    }
+    #runButton{
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+    }
+    .dashboard{
+      padding: 10px;
+    }
+    .close{
+      position: absolute;
+      right: 0;
+      top: 0;
+      padding: 15px 20px;
+      cursor: pointer;
+      font-size: 30px;
+      color: #fff;
+      font-weight: bolder;
+      background-color: rgba(0,0,0,.5) ;
+    }
+  </style>
+</head>
+<body>
+  <div id="runPad" class="forward animated">
+    <img id="rocket" src="./rocket.png" alt="">
+    <div class="dashboard"><span style="margin-right:20px;">速度：</span><span>持续时间：</span></div>
+    <div class="close">×</div>
+  </div>
+  <div id="blocklyArea" style="width:100%;height:100vh;"></div>
+  <div id="blocklyDiv" style="position: absolute;"></div>
+  <!-- <p>
+    <button onclick="showCode()">Show JavaScript</button>
+    
+  </p> -->
+  <button onclick="runCode()" id="runButton">Run JavaScript</button>
+  <xml id="toolbox" style="display: none">
+    <category name="运动" colour="230">
+      <block type="action0"></block>
+      <block type="action1"></block>
+      <block type="action2"></block>
+      <block type="action3"></block>
+      <block type="action4"></block>
+      <block type="action5"></block>
+    </category>
+    
+    <category name="展示" colour="330">
+      <block type="show1"></block>
+      <block type="show2"></block>
+      <block type="show3"></block>
+    </category>
+    <category name="控制" colour="#04b3ff">
+      <block type="control1"></block>
+      <block type="controls_repeat_ext">
+        <value name="TIMES">
+          <block type="math_number">
+            <field name="NUM">10</field>
+          </block>
+        </value>
+      </block>
+      <block type="controls_whileUntil">
+        <value name="BOOL">
+          <block type="logic_boolean"></block>
+        </value>
+      </block>
+      <block type="controls_if"></block>
+      <block type="controls_ifelse">
+        
+        </block>
+    </category>
+  </xml>
+  
+  <script>
+    var blocklyArea = document.getElementById('blocklyArea');
+    var blocklyDiv = document.getElementById('blocklyDiv');
+
+    var demoWorkspace = Blockly.inject(blocklyDiv,
+        {media: '../../media/',
+         toolbox: document.getElementById('toolbox'),
+         comments :false,
+          zoom:
+         {controls: true,
+          wheel: false,
+          startScale: 1.0,
+          maxScale: 2,
+          minScale: 0.5,
+          scaleSpeed: 1.2},
+       });
+
+    var onresize = function(e) {
+      // Compute the absolute coordinates and dimensions of blocklyArea.
+      var element = blocklyArea;
+      var x = 0;
+      var y = 0;
+      do {
+        x += element.offsetLeft;
+        y += element.offsetTop;
+        element = element.offsetParent;
+      } while (element);
+      // Position blocklyDiv over blocklyArea.
+      blocklyDiv.style.left = x + 'px';
+      blocklyDiv.style.top = y + 'px';
+      blocklyDiv.style.width = blocklyArea.offsetWidth + 'px';
+      blocklyDiv.style.height = blocklyArea.offsetHeight + 'px';
+    };
+    window.addEventListener('resize', onresize, false);
+    onresize();
+    Blockly.svgResize(demoWorkspace);
+
+
+    
+
+    Blockly.JavaScript.addReservedWords('exit');
+
+    //var outputArea = document.getElementById('output');
+    var runButton = document.getElementById('runButton');
+    var myInterpreter = null;
+    var runner;
+    window.action = function(s){
+      var a = s.split("-");
+      MyRocket[a[0]](a[1]) ;
+      //console.log(v) ;
+    }
+
+    function initApi(interpreter, scope) {
+      // Add an API function for the alert() block, generated for "text_print" blocks.
+      var wrapper = function(text) {
+        text = text ? text.toString() : '';
+        return interpreter.createPrimitive(action(text));
+      };
+      interpreter.setProperty(scope, 'action',
+          interpreter.createNativeFunction(wrapper));
+
+
+      // Add an API function for the prompt() block.
+      var wrapper = function(text) {
+        text = text ? text.toString() : '';
+        return interpreter.createPrimitive(prompt(text));
+      };
+      interpreter.setProperty(scope, 'prompt',
+          interpreter.createNativeFunction(wrapper));
+
+      // Add an API for the wait block.  See wait_block.js
+      initInterpreterWaitForSeconds(interpreter, scope);
+
+      // Add an API function for highlighting blocks.
+      // var wrapper = function(id) {
+      //   id = id ? id.toString() : '';
+      //   return interpreter.createPrimitive(highlightBlock(id));
+      // };
+      // interpreter.setProperty(scope, 'highlightBlock',
+      //     interpreter.createNativeFunction(wrapper));
+
+    }
+
+    var highlightPause = false;
+    var latestCode = '';
+
+    // function highlightBlock(id) {
+    //   //demoWorkspace.highlightBlock(id);
+    //   highlightPause = true;
+    // }
+
+    function resetStepUi(clearOutput) {
+      //demoWorkspace.highlightBlock(null);
+      highlightPause = false;
+      runButton.disabled = '';
+
+      if (clearOutput) {
+        //outputArea.value = 'Program output:\n=================';
+      }
+    }
+
+    function generateCodeAndLoadIntoInterpreter() {
+      // Generate JavaScript code and parse it.
+      // Blockly.JavaScript.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
+      // Blockly.JavaScript.addReservedWords('highlightBlock');
+      var codestr = Blockly.JavaScript.workspaceToCode(demoWorkspace) ;
+      try{
+        codestr = codestr.replace(/\r|\n|\\s/g, "$");
+        codestr = codestr.split("start()")[1].split("$$")[0] ;
+        codestr = codestr.replace(/\$/g,"") ;
+        console.log(codestr) ;
+      }catch(e){
+
+      }
+      
+      //console.log(Blockly.JavaScript.workspaceToCode(demoWorkspace).match(/^(start)[\s\S]*(\r\n)*&/)[0]) ;
+      // try{
+      //   latestCode = Blockly.JavaScript.workspaceToCode(demoWorkspace).match(/^(start).*/g)[0];
+      //   latestCode = latestCode.replace("start()","") ;
+      // }catch(e){
+
+      // }
+      
+      //latestCode = [0] ;
+      
+      resetStepUi(true);
+    }
+
+    function resetInterpreter() {
+      myInterpreter = null;
+      if (runner) {
+        clearTimeout(runner);
+        runner = null;
+      }
+    }
+
+    function runCode() {
+      $("#runPad").show() ;
+      if (!myInterpreter) {
+        // First statement of this code.
+        // Clear the program output.
+        resetStepUi(true);
+        runButton.disabled = 'disabled';
+
+        // And then show generated code in an alert.
+        // In a timeout to allow the outputArea.value to reset first.
+        setTimeout(function() {
+          console.log('Ready to execute the following code\n' +
+            '===================================\n' +
+            latestCode);
+
+          // Begin execution
+          highlightPause = false;
+          myInterpreter = new Interpreter(latestCode, initApi);
+          runner = function() {
+            console.log(1) ;
+            if (myInterpreter) {
+              var hasMore = myInterpreter.run();
+              if (hasMore) {
+                // Execution is currently blocked by some async call.
+                // Try again later.
+                setTimeout(runner, 10);
+              } else {
+                // Program is complete.
+                //outputArea.value += '\n\n<< Program complete >>';
+                resetInterpreter();
+                resetStepUi(false);
+              }
+            }
+          };
+          runner();
+        }, 1);
+        return;
+      }
+    }
+
+    // Load the interpreter now, and upon future changes.
+    generateCodeAndLoadIntoInterpreter();
+    demoWorkspace.addChangeListener(function(event) {
+      if (!(event instanceof Blockly.Events.Ui)) {
+        // Something changed. Parser needs to be reloaded.
+        resetInterpreter();
+        generateCodeAndLoadIntoInterpreter();
+      }
+    });
+  </script>
+</body>
+</html>
